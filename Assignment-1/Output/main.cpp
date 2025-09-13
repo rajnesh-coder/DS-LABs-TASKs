@@ -1,5 +1,5 @@
 #include "PercolationStat.hpp"
-#include "stopWatch.hpp"
+#include "stopwatch.hpp"
 #include <iostream>
 #include <fstream>
 
@@ -17,23 +17,22 @@ int main() {
     }
 
     try {
-        // Quick-Find
-        Stopwatch t;
-        t.reset();
-        PercolationStats statsQF(n, trials,"QF");
-        double elapsedQF = t.elapsedTime();
+      Stopwatch t;
 
+        // Quick-Find
+        t.reset();
+        PercolationStats<Percolation_QF> statsQF(n, trials);
+         double elapsedQF = t.elapsedTime();
         statsQF.report(fout, "Quick-Find");
         fout << "Execution time (QF): " << elapsedQF << " seconds\n\n";
 
         // Weighted Quick-Union
         t.reset();
-        PercolationStats statsWQU(n, trials,"WQU");
+        PercolationStats<Percolation_WQU>statsWQU (n, trials);
         double elapsedWQU = t.elapsedTime();
-
         statsWQU.report(fout, "Weighted Quick-Union");
         fout << "Execution time (WQU): " << elapsedWQU << " seconds\n\n";
-
+        
         std::cout << "Comparison results written to Comparison.txt\n";
     } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
