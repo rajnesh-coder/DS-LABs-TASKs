@@ -3,35 +3,24 @@
 #include <fstream>
 #include <cmath>
 #include <vector>
-#include <stdexcept>
 #include "Percolation_WQU.hpp"
 #include "Percolation_QF.hpp"
-
+template <typename PercolationType>
 class PercolationStats {
     std::vector<double> thresholds;
     double cachedMean;
+    PercolationType p;   // same object reused
 
 public:
-    // perform independent trials on an n-by-n grid
-    PercolationStats(int n, int trials, const std::string &type) : cachedMean(0.0) {
+    PercolationStats(int n, int trials) 
+        : cachedMean(0.0), p(n) {  
         if (n <= 0 || trials <= 0) {
             throw std::invalid_argument("n and trials must be > 0");
         }
 
         thresholds.reserve(trials);
         for (int i = 0; i < trials; i++) {
-            int openCount = 0;
-
-            if (type == "QF") {
-                Percolation_QF p(n);
-                openCount = p.test();
-            } else if (type == "WQU") {
-                Percolation_WQU p(n);
-                openCount = p.test();
-            } else {
-                throw std::invalid_argument("Unknown percolation type: " + type);
-            }
-
+            int openCount = p.test();  
             double threshold = static_cast<double>(openCount) / (n * n);
             thresholds.push_back(threshold);
         }
@@ -62,7 +51,9 @@ public:
         return mean() + 1.96 * (s / std::sqrt(thresholds.size()));
     }
 
-    void report(std::ostream &out, const std::string &label) {
+    // Write results to file instead of cout
+    template <typename Stream>
+    void report(Stream &out, const std::string &label) {
         out << "=== " << label << " ===\n";
         out << "mean                    = " << mean() << '\n';
         out << "stddev                  = " << stddev() << '\n';
