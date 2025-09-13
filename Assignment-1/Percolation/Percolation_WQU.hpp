@@ -10,11 +10,10 @@ class Percolation_WQU {
     int n;                                // grid size (n x n)
     int openSites;                        // count of open sites
     std::vector<std::vector<bool>> open;  // track open sites
-    WQuickUnionUF uf;                     // union–find for connectivity
+    QuickFindUF uf;                       // union–find for connectivity
     int virtualTop;                       // virtual top node index
     int virtualBottom;                    // virtual bottom node index
 
-    // flatten (row,col) into 1D index
     int index(int row, int col) const {
         return row * n + col;
     }
@@ -24,6 +23,13 @@ class Percolation_WQU {
     }
 
 public:
+    // default constructor (chooses n = 2 as example)
+    Percolation_WQU() : n(2), openSites(0), open(2, std::vector<bool>(2, false)), uf(2+2) {
+        int totalSites = n * n;
+        virtualTop = totalSites;
+        virtualBottom = totalSites + 1;
+    }
+
     // creates n-by-n grid, with all sites initially blocked
     Percolation_WQU(int n) : n(n), openSites(0), open(n, std::vector<bool>(n, false)), uf(n+2) {
         if (n <= 0) throw std::invalid_argument("Grid size must be > 0");
@@ -32,13 +38,11 @@ public:
         virtualBottom = totalSites + 1;
     }
 
-    // is the site (row, col) open?
     bool isOpen(int row, int col) {
         if (!valid(row, col)) throw std::invalid_argument("Invalid index");
         return open[row][col];
     }
 
-    // opens the site (row, col) if it is not open already
     void openSite(int row, int col) {
         if (!valid(row, col)) throw std::invalid_argument("Invalid index");
         if (open[row][col]) return;
@@ -46,13 +50,7 @@ public:
         open[row][col] = true;
         openSites++;
 
-        int site = index(row, col);
-
-        // connect to virtual top/bottom if in first or last row
-        if (row == 0) uf.unify({row,col}, {0,0}, n); // connect top row to virtualTop
-        if (row == n-1) uf.unify({row,col}, {n-1,0}, n); // connect bottom row to virtualBottom
-
-        // check neighbors
+        // connect to neighbors
         const int dr[4] = {-1, 1, 0, 0};
         const int dc[4] = {0, 0, -1, 1};
         for (int k = 0; k < 4; k++) {
@@ -63,13 +61,9 @@ public:
         }
     }
 
-    // is the site (row, col) full? (connected to top)
     bool isFull(int row, int col) {
         if (!valid(row, col)) throw std::invalid_argument("Invalid index");
         if (!isOpen(row, col)) return false;
-
-        int site = index(row, col);
-        // check connectivity to any open site in top row
         for (int j = 0; j < n; j++) {
             if (isOpen(0, j) && uf.find({row,col}, n) == uf.find({0,j}, n)) {
                 return true;
@@ -78,12 +72,10 @@ public:
         return false;
     }
 
-    // returns the number of open sites
     int numberOfOpenSites() {
         return openSites;
     }
 
-    // does the system percolate?
     bool percolates() {
         for (int j = 0; j < n; j++) {
             if (isOpen(0, j)) {
@@ -99,14 +91,12 @@ public:
         return false;
     }
 
-    // Monte Carlo test
     int test() {
         srand(time(0));
         Percolation_WQU p(n);
-        int x, y;
         while (!p.percolates()) {
-            x = rand() % n;
-            y = rand() % n;
+            int x = rand() % n;
+            int y = rand() % n;
             p.openSite(x, y);
         }
         return p.numberOfOpenSites();
